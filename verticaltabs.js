@@ -42,7 +42,7 @@ const {Cc, Ci, Cu} = require('chrome');
 const {emit} = require('sdk/dom/events');
 const {platform} = require('sdk/system');
 const {prefs} = require('sdk/simple-prefs');
-const {addPingStats, Stats, setDefaultPrefs} = require('./utils');
+const {sendPing, setDefaultPrefs} = require('./utils');
 const {createExposableURI} = Cc['@mozilla.org/docshell/urifixup;1'].
                                createInstance(Ci.nsIURIFixup);
 
@@ -64,7 +64,7 @@ function VerticalTabs(window) {
   this.window = window;
   this.document = window.document;
   this.unloaders = [];
-  this.stats = new Stats;
+  this.sendPing = sendPing;
   this.init();
 }
 VerticalTabs.prototype = {
@@ -138,9 +138,6 @@ VerticalTabs.prototype = {
       this.window.gBrowser._endRemoveTab = this._endRemoveTab;
       this.window.BrowserOpenTab = this.BrowserOpenTab;
     });
-    this.window.onunload = () => {
-      addPingStats(this.stats);
-    };
 
     this.rearrangeXUL();
 
@@ -298,10 +295,10 @@ VerticalTabs.prototype = {
         let newstate = box.getAttribute('tabspinned') == 'true' ? 'false' : 'true';
         box.setAttribute('tabspinned', newstate);
         if (newstate == 'true') {
-          window.VerticalTabs.stats.tab_center_pinned++;
+          window.VerticalTabs.sendPing('tab_center_pinned');
           button.setAttribute('tooltiptext', 'Shrink sidebar when not in use');
         } else {
-          window.VerticalTabs.stats.tab_center_unpinned++;
+          window.VerticalTabs.sendPing('tab_center_unpinned');
           button.setAttribute('tooltiptext', 'Keep sidebar open');
         }
         window.VerticalTabs.resizeFindInput();
@@ -344,7 +341,7 @@ VerticalTabs.prototype = {
 
     let enter = (event) => {
       if (event.type === 'mouseenter' && leftbox.getAttribute('expanded') !== 'true') {
-        this.stats.tab_center_expanded++;
+        this.sendPing('tab_center_expanded');
         leftbox.setAttribute('expanded', 'true');
       }
       if (event.pageX <= 4) {
@@ -650,20 +647,20 @@ VerticalTabs.prototype = {
 
   onTabOpen: function (aEvent) {
     let tab = aEvent.target;
-    this.stats.tabs_created++;
+    this.sendPing('tabs_created');
     this.initTab(tab);
   },
 
   onTabClose: function (aEvent) {
-    this.stats.tabs_destroyed++;
+    this.sendPing('tabs_destroyed');
   },
 
   onTabPinned: function (aEvent) {
-    this.stats.tabs_pinned++;
+    this.sendPing('tabs_pinned');
   },
 
   onTabUnpinned: function (aEvent) {
-    this.stats.tabs_unpinned++;
+    this.sendPing('tabs_unpinned');
   },
 
 };
