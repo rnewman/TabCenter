@@ -552,6 +552,13 @@ VerticalTabs.prototype = {
     leftbox.addEventListener('mouseenter', enter);
     leftbox.addEventListener('mousemove', enter);
     leftbox.addEventListener('mouseleave', pauseBeforeExit);
+    leftbox.addEventListener('mousedown', () => {
+      // Don't register clicks on the leftbar if it's not open.
+      if (event.mozInputSource === Ci.nsIDOMMouseEvent.MOZ_SOURCE_TOUCH &&
+          leftbox.getAttribute('expanded') !== 'true') {
+        event.stopPropagation();
+      }
+    });
 
     let oldUpdateToolbars = window.FullScreen._updateToolbars;
     window.FullScreen._updateToolbars = (aEnterFS) => {
